@@ -6,6 +6,8 @@ This is a Proof of Concept demonstrating a JavaScript Bridge exposure vulnerabil
 
 👉 **[Open PoC Page](https://youichi-uda.github.io/oppo-game-poc/)**
 
+👉 **[Open CSRF Page](https://youichi-uda.github.io/oppo-game-poc/csrf_test.html)**
+
 ## How to Test
 
 1. On an OPPO device, trigger the vulnerable deep link:
