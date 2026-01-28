@@ -10,6 +10,8 @@ This is a Proof of Concept demonstrating a JavaScript Bridge exposure vulnerabil
 
 👉 **[Open escalation Page](https://youichi-uda.github.io/oppo-game-poc/escalation.html?v=2)**
 
+👉 **[Open escalation Page](https://youichi-uda.github.io/oppo-game-poc/escalation2.html?v=2)**
+
 ## How to Test
 
 1. On an OPPO device, trigger the vulnerable deep link:
