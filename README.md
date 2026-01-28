@@ -4,11 +4,11 @@ This is a Proof of Concept demonstrating a JavaScript Bridge exposure vulnerabil
 
 ## Live Demo
 
-👉 **[Open PoC Page](https://youichi-uda.github.io/oppo-game-poc/)**
+👉 **[Open PoC Page](https://youichi-uda.github.io/oppo-game-poc/?v=2)**
 
-👉 **[Open CSRF Page](https://youichi-uda.github.io/oppo-game-poc/csrf_test.html)**
+👉 **[Open CSRF Page](https://youichi-uda.github.io/oppo-game-poc/csrf_test.html?v=2)**
 
-👉 **[Open escalation Page](https://youichi-uda.github.io/oppo-game-poc/escalation.html)**
+👉 **[Open escalation Page](https://youichi-uda.github.io/oppo-game-poc/escalation.html?v=2)**
 
 ## How to Test
 
