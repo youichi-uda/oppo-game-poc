@@ -142,6 +142,27 @@
     </div>
 
     <div class="card">
+        <h3>6. Bypass Methods (select URL above first)</h3>
+        <div class="section">
+            <button onclick="method1()">1: location.href</button>
+            <button onclick="method2()">2: location.assign</button>
+            <button onclick="method3()">3: location.replace</button>
+            <button onclick="method4()">4: window.open _blank</button>
+            <button onclick="method5()">5: window.open _self</button>
+            <button onclick="method6()">6: iframe</button>
+            <button onclick="method7()">7: anchor click</button>
+            <button onclick="method8()">8: anchor _blank</button>
+            <button onclick="method9()">9: form GET</button>
+            <button onclick="method10()">10: meta refresh</button>
+            <button onclick="method12()">12: setTimeout</button>
+            <button onclick="method13()">13: HyperJsbridge</button>
+            <button onclick="method14()">14: Blob URL</button>
+            <button onclick="tryAllMethods()" style="background:#16a34a;">🚀 Try ALL</button>
+        </div>
+        <p style="color:#94a3b8;font-size:0.8em;">Current URL: <span id="current-url">none</span></p>
+    </div>
+
+    <div class="card">
         <h3>Log</h3>
         <pre id="log"></pre>
     </div>
@@ -162,21 +183,133 @@
         };
 
         const tryLink = (url) => {
-            log(`Trying link: ${url}`);
-            try {
-                // Method 1: Direct navigation
-                window.location.href = url;
-            } catch (e) {
-                log(`Error: ${e.message}`);
-                // Method 2: Create link and click
-                try {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.click();
-                } catch (e2) {
-                    log(`Link click also failed: ${e2.message}`);
-                }
+            log(`Selected: ${url}`);
+            currentUrl = url;
+            document.getElementById('current-url').textContent = url;
+        };
+
+        let currentUrl = '';
+
+        // Method 1: Direct location
+        const method1 = () => {
+            log('Method 1: window.location.href');
+            window.location.href = currentUrl;
+        };
+
+        // Method 2: location.assign
+        const method2 = () => {
+            log('Method 2: location.assign');
+            window.location.assign(currentUrl);
+        };
+
+        // Method 3: location.replace
+        const method3 = () => {
+            log('Method 3: location.replace');
+            window.location.replace(currentUrl);
+        };
+
+        // Method 4: window.open
+        const method4 = () => {
+            log('Method 4: window.open');
+            window.open(currentUrl, '_blank');
+        };
+
+        // Method 5: window.open _self
+        const method5 = () => {
+            log('Method 5: window.open _self');
+            window.open(currentUrl, '_self');
+        };
+
+        // Method 6: iframe inject
+        const method6 = () => {
+            log('Method 6: iframe');
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = currentUrl;
+            document.body.appendChild(iframe);
+        };
+
+        // Method 7: anchor click
+        const method7 = () => {
+            log('Method 7: anchor click');
+            const a = document.createElement('a');
+            a.href = currentUrl;
+            a.click();
+        };
+
+        // Method 8: anchor with target _blank
+        const method8 = () => {
+            log('Method 8: anchor target=_blank');
+            const a = document.createElement('a');
+            a.href = currentUrl;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+        };
+
+        // Method 9: form submit GET
+        const method9 = () => {
+            log('Method 9: form GET');
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = currentUrl;
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        // Method 10: meta refresh (delayed)
+        const method10 = () => {
+            log('Method 10: meta refresh');
+            const meta = document.createElement('meta');
+            meta.httpEquiv = 'refresh';
+            meta.content = `0;url=${currentUrl}`;
+            document.head.appendChild(meta);
+        };
+
+        // Method 11: document.write
+        const method11 = () => {
+            log('Method 11: document.write redirect');
+            document.write(`<script>location='${currentUrl}'<\/script>`);
+        };
+
+        // Method 12: setTimeout + location
+        const method12 = () => {
+            log('Method 12: setTimeout location');
+            setTimeout(() => { window.location = currentUrl; }, 100);
+        };
+
+        // Method 13: Use HyperJsbridge if available
+        const method13 = () => {
+            log('Method 13: HyperJsbridge');
+            if (typeof HyperJsbridge !== 'undefined') {
+                // Try various potential methods
+                try { HyperJsbridge.openUrl && HyperJsbridge.openUrl(currentUrl); } catch (e) { }
+                try { HyperJsbridge.open && HyperJsbridge.open(currentUrl); } catch (e) { }
+                try { HyperJsbridge.loadUrl && HyperJsbridge.loadUrl(currentUrl); } catch (e) { }
+                try { HyperJsbridge.navigate && HyperJsbridge.navigate(currentUrl); } catch (e) { }
+                try { HyperJsbridge.startActivity && HyperJsbridge.startActivity(currentUrl); } catch (e) { }
+                log('Tried all HyperJsbridge methods');
+            } else {
+                log('HyperJsbridge not available');
             }
+        };
+
+        // Method 14: Blob URL wrapper
+        const method14 = () => {
+            log('Method 14: Blob redirect');
+            const html = `<html><head><meta http-equiv="refresh" content="0;url=${currentUrl}"></head></html>`;
+            const blob = new Blob([html], { type: 'text/html' });
+            window.location = URL.createObjectURL(blob);
+        };
+
+        // Try all methods
+        const tryAllMethods = () => {
+            log('=== Trying all methods ===');
+            [method7, method8, method6, method4, method5, method9, method10, method12, method13].forEach((m, i) => {
+                setTimeout(() => {
+                    try { m(); } catch (e) { log(`Method ${i + 1} error: ${e.message}`); }
+                }, i * 500);
+            });
         };
 
         const tryBridgeEscalation = () => {
